@@ -813,10 +813,12 @@
 // CONFIGURAÇÃO SUPABASE
 // ─────────────────────────────────────────────
 const SUPABASE_URL = 'https://ypygstchwsxfuqqdtkhf.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjA0NjQsImV4cCI6MjA5NTY5NjQ2NH0.oteawsPzL9HndoaB-AsP_v54w9X1_lhK4QNQmogAswU';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjA0NjQsImV4cCI6MjA5NTY5NjQ2NH0.oteawsPzL9HndoaB-AsP_v54w9X1_lhK4QNQmogAswU';
+const SUPABASE_ADMIN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDEyMDQ2NCwiZXhwIjoyMDk1Njk2NDY0fQ.-ON3pdeMITJZW9Hxbxse3h7zC-D4Kq5lOa4CwCwzGws';
 
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+const dbAdmin = createClient(SUPABASE_URL, SUPABASE_ADMIN);
 
 // ─────────────────────────────────────────────
 // ESTADO
@@ -1064,7 +1066,7 @@ async function doPublish() {
 
     fill.style.width = '30%';
 
-    const { error: uploadErr } = await db.storage.from('files').upload(filePath, selectedFile, { upsert: false });
+    const { error: uploadErr } = await dbAdmin.storage.from('files').upload(filePath, selectedFile, { upsert: false });
     if (uploadErr) throw uploadErr;
 
     fill.style.width = '60%';
@@ -1072,16 +1074,16 @@ async function doPublish() {
     let imagePath = null;
     if (selectedImg) {
       const imgPath = `images/${ts}_${selectedImg.name.replace(/\s/g,'_')}`;
-      const { error: imgErr } = await db.storage.from('files').upload(imgPath, selectedImg, { upsert: false });
+      const { error: imgErr } = await dbAdmin.storage.from('files').upload(imgPath, selectedImg, { upsert: false });
       if (!imgErr) {
-        const { data: imgUrl } = db.storage.from('files').getPublicUrl(imgPath);
+        const { data: imgUrl } = dbAdmin.storage.from('files').getPublicUrl(imgPath);
         imagePath = imgUrl.publicUrl;
       }
     }
 
     fill.style.width = '80%';
 
-    const { error: dbErr } = await db.from('items').insert({
+    const { error: dbErr } = await dbAdmin.from('items').insert({
       title: title || selectedFile.name.replace(/\.(apk|apks|xapk)$/i,''),
       description: desc || null,
       file_type: type,
