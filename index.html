@@ -813,12 +813,11 @@
 // CONFIGURAÇÃO SUPABASE
 // ─────────────────────────────────────────────
 const SUPABASE_URL = 'https://ypygstchwsxfuqqdtkhf.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjA0NjQsImV4cCI6MjA5NTY5NjQ2NH0.oteawsPzL9HndoaB-AsP_v54w9X1_lhK4QNQmogAswU';
-const SUPABASE_ADMIN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDEyMDQ2NCwiZXhwIjoyMDk1Njk2NDY0fQ.-ON3pdeMITJZW9Hxbxse3h7zC-D4Kq5lOa4CwCwzGws';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlweWdzdGNod3N4ZnVxcWR0a2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMjA0NjQsImV4cCI6MjA5NTY5NjQ2NH0.oteawsPzL9HndoaB-AsP_v54w9X1_lhK4QNQmogAswU';
 
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON);
-const dbAdmin = createClient(SUPABASE_URL, SUPABASE_ADMIN);
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const dbAdmin = db;
 
 // ─────────────────────────────────────────────
 // ESTADO
