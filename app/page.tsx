@@ -26,18 +26,18 @@ export default function HomePage() {
       <section className="grid gap-4 sm:grid-cols-3">
         <Feature
           icon={<Code2 className="size-5" />}
-          title="Cole o código"
-          desc="Suporta scripts grandes, obfuscados ou deobfuscados."
+          title="24/7 — Perfeição"
+          desc="hospedagem gratuita, você pode usar nosso raw pelo tempo que preferir, com o melhor desempenho possível, online 24 horas por dia, toda semana!"
         />
         <Feature
           icon={<Link2 className="size-5" />}
-          title="Receba a URL raw"
-          desc="Endpoint em texto puro com CORS liberado para HttpGet."
+          title="Raw, Loadstring & Source"
+          desc="Após upar seu source/script obfuscado ou sem obfuscação aqui, você receberá tudo certinho, eu digo: url feita, loadstring feita, e o código vai exibir no seu output, praticamente tudo de primeira mão."
         />
         <Feature
           icon={<Zap className="size-5" />}
-          title="Rode com loadstring"
-          desc="Cole o snippet pronto no executor e execute na hora."
+          title="Execução Otimizada"
+          desc="Ao rodar no executor, ele demora um curto segundo, isso não é por conta de obfuscador nem nada, é só a otimização do url sendo montada."
         />
       </section>
     </main>
