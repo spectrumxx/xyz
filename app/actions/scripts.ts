@@ -26,7 +26,7 @@ export async function createScript(formData: FormData): Promise<CreateScriptResu
     return { ok: false, error: "O script não pode estar vazio." }
   }
 
-  if (content.length > 500_000) {
+  if (content.length > 5000_0000) {
     return { ok: false, error: "O script é muito grande (máximo 500 KB)." }
   }
 
