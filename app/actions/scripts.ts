@@ -2,27 +2,8 @@
 
 import { db } from "@/lib/db"
 import { scripts } from "@/lib/db/schema"
+import { isLegacyId, toSlug } from "@/lib/slug"
 import { and, eq, sql } from "drizzle-orm"
-
-// Converte título em slug URL-friendly
-// ex: "Meu Script Incrível!!" → "meu-script-incrivel"
-function toSlug(title: string): string {
-  return title
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "") // só letras, números, espaços, hífens
-    .trim()
-    .replace(/\s+/g, "-") // espaços → hífens
-    .replace(/-+/g, "-") // hífens duplos → simples
-    .slice(0, 80) // limite de tamanho
-}
-
-// IDs legados são 8 chars alfanuméricos misturando maiúsculas e dígitos
-// ex: "EU0098IQ" — slugs novos nunca terão maiúsculas
-function isLegacyId(id: string): boolean {
-  return /^[a-zA-Z0-9]{8}$/.test(id) && /[A-Z]/.test(id)
-}
 
 export type CreateScriptResult =
   | { ok: true; path: string }
@@ -89,5 +70,3 @@ export async function incrementViewsById(id: string) {
     .set({ views: sql`${scripts.views} + 1` })
     .where(eq(scripts.id, id))
 }
-
-export { isLegacyId }
