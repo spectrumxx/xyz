@@ -1,4 +1,5 @@
-import { getScriptById, getScriptBySlug, isLegacyId } from "@/app/actions/scripts"
+import { getScriptById, getScriptBySlug } from "@/app/actions/scripts"
+import { isLegacyId } from "@/lib/slug"
 import { db } from "@/lib/db"
 import { scripts } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
