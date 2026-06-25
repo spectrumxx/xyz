@@ -10,18 +10,18 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'LuaPaste — Hospede e rode scripts Lua',
+  title: 'Genesis X — Hospede e rode scripts Lua',
   description:
     'Cole seu script Lua, gere uma URL raw e rode no seu executor com loadstring(game:HttpGet(...))().',
-  generator: 'v0.app',
+  generator: 'genesis-loader.xyz',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/genesis-nobg.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/genesis-nobg.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
