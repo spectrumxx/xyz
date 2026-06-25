@@ -1,3 +1,4 @@
+import { getScriptById, getScriptBySlug, isLegacyId } from "@/app/actions/scripts"
 import { db } from "@/lib/db"
 import { scripts } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
@@ -5,18 +6,39 @@ import type { NextRequest } from "next/server"
 
 export const dynamic = "force-dynamic"
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string[] }> }
+) {
+  const { slug } = await params
+  // slug pode ser ["sarradanoar"] ou ["sarradanoar", "2"]
 
-  const rows = await db
-    .select({ content: scripts.content })
-    .from(scripts)
-    .where(eq(scripts.id, id))
-    .limit(1)
+  let script = null
+  let scriptId: string | null = null
 
-  const script = rows[0]
+  if (slug.length === 1) {
+    const segment = slug[0]
 
-  if (!script) {
+    if (isLegacyId(segment)) {
+      // Compatibilidade com IDs antigos como "EU0098IQ"
+      script = await getScriptById(segment)
+      scriptId = segment
+    } else {
+      // Slug novo, versão 1
+      script = await getScriptBySlug(segment, 1)
+      scriptId = script?.id ?? null
+    }
+  } else if (slug.length === 2) {
+    const slugName = slug[0]
+    const version = parseInt(slug[1], 10)
+
+    if (!isNaN(version) && version >= 1) {
+      script = await getScriptBySlug(slugName, version)
+      scriptId = script?.id ?? null
+    }
+  }
+
+  if (!script || !scriptId) {
     return new Response("-- Script não encontrado", {
       status: 404,
       headers: {
@@ -26,11 +48,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     })
   }
 
-  // Conta a visualização sem bloquear a resposta
+  // Incrementa views sem bloquear resposta
   void db
     .update(scripts)
     .set({ views: sql`${scripts.views} + 1` })
-    .where(eq(scripts.id, id))
+    .where(eq(scripts.id, scriptId))
     .catch(() => {})
 
   return new Response(script.content, {
