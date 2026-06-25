@@ -2,20 +2,30 @@
 
 import { db } from "@/lib/db"
 import { scripts } from "@/lib/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 
-const ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+// Converte título em slug URL-friendly
+// ex: "Meu Script Incrível!!" → "meu-script-incrivel"
+function toSlug(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // só letras, números, espaços, hífens
+    .trim()
+    .replace(/\s+/g, "-") // espaços → hífens
+    .replace(/-+/g, "-") // hífens duplos → simples
+    .slice(0, 80) // limite de tamanho
+}
 
-function generateId(length = 8) {
-  let id = ""
-  for (let i = 0; i < length; i++) {
-    id += ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
-  }
-  return id
+// IDs legados são 8 chars alfanuméricos misturando maiúsculas e dígitos
+// ex: "EU0098IQ" — slugs novos nunca terão maiúsculas
+function isLegacyId(id: string): boolean {
+  return /^[a-zA-Z0-9]{8}$/.test(id) && /[A-Z]/.test(id)
 }
 
 export type CreateScriptResult =
-  | { ok: true; id: string }
+  | { ok: true; path: string }
   | { ok: false; error: string }
 
 export async function createScript(formData: FormData): Promise<CreateScriptResult> {
@@ -26,37 +36,58 @@ export async function createScript(formData: FormData): Promise<CreateScriptResu
     return { ok: false, error: "O script não pode estar vazio." }
   }
 
-  if (content.length > 5000_0000) {
-    return { ok: false, error: "O script é muito grande (máximo 500 KB)." }
+  if (content.length > 50_000_000) {
+    return { ok: false, error: "O script é muito grande (máximo 50 MB)." }
   }
 
   const title = rawTitle.slice(0, 120) || "Untitled"
+  const slug = toSlug(title) || "script"
 
-  // Tenta gerar um id único (colisão é altamente improvável, mas tratamos mesmo assim)
-  let id = generateId()
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const existing = await db
-      .select({ id: scripts.id })
-      .from(scripts)
-      .where(eq(scripts.id, id))
-      .limit(1)
-    if (existing.length === 0) break
-    id = generateId()
-  }
+  // Conta quantas versões desse slug já existem
+  const existing = await db
+    .select({ version: scripts.version })
+    .from(scripts)
+    .where(eq(scripts.slug, slug))
 
-  await db.insert(scripts).values({ id, title, content, language: "lua" })
+  const nextVersion = existing.length === 0 ? 1 : existing.length + 1
 
-  return { ok: true, id }
+  // ID interno: slug + versão (único no DB)
+  const id = nextVersion === 1 ? slug : `${slug}/${nextVersion}`
+
+  await db.insert(scripts).values({
+    id,
+    slug,
+    version: nextVersion,
+    title,
+    content,
+    language: "lua",
+  })
+
+  // path público da página de detalhes
+  const path = nextVersion === 1 ? `/${slug}` : `/${slug}/${nextVersion}`
+  return { ok: true, path }
 }
 
-export async function getScript(id: string) {
+export async function getScriptBySlug(slug: string, version: number) {
+  const rows = await db
+    .select()
+    .from(scripts)
+    .where(and(eq(scripts.slug, slug), eq(scripts.version, version)))
+    .limit(1)
+  return rows[0] ?? null
+}
+
+// Mantém compatibilidade com IDs legados (ex: "EU0098IQ")
+export async function getScriptById(id: string) {
   const rows = await db.select().from(scripts).where(eq(scripts.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function incrementViews(id: string) {
+export async function incrementViewsById(id: string) {
   await db
     .update(scripts)
     .set({ views: sql`${scripts.views} + 1` })
     .where(eq(scripts.id, id))
 }
+
+export { isLegacyId }
