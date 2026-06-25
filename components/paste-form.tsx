@@ -29,7 +29,7 @@ export function PasteForm() {
     startTransition(async () => {
       const result = await createScript(formData)
       if (result.ok) {
-        router.push(`/${result.id}`)
+        router.push(result.path)
       } else {
         setError(result.error)
       }
