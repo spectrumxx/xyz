@@ -2,6 +2,8 @@ import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 
 export const scripts = pgTable("scripts", {
   id: text("id").primaryKey(),
+  slug: text("slug").notNull(),
+  version: integer("version").notNull().default(1),
   title: text("title").notNull().default("Untitled"),
   content: text("content").notNull(),
   language: text("language").notNull().default("lua"),
