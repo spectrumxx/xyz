@@ -1,5 +1,4 @@
-import { getScriptById, getScriptBySlug } from "@/app/actions/scripts"
-import { isLegacyId } from "@/lib/slug"
+import { getScript } from "@/app/actions/scripts"
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Eye, Link2, Terminal } from "lucide-react"
@@ -16,46 +15,15 @@ async function getBaseUrl() {
   return `${proto}://${host}`
 }
 
-export default async function ScriptPage({
-  params,
-}: {
-  params: Promise<{ slug: string[] }>
-}) {
-  const { slug } = await params
-
-  let script = null
-
-  if (slug.length === 1) {
-    const segment = slug[0]
-    if (isLegacyId(segment)) {
-      script = await getScriptById(segment)
-    } else {
-      script = await getScriptBySlug(segment, 1)
-    }
-  } else if (slug.length === 2) {
-    const slugName = slug[0]
-    const version = parseInt(slug[1], 10)
-    if (!isNaN(version) && version >= 1) {
-      script = await getScriptBySlug(slugName, version)
-    }
-  }
+export default async function ScriptPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const script = await getScript(id)
 
   if (!script) notFound()
 
   const baseUrl = await getBaseUrl()
-
-  // Monta raw URL igual à rota
-  let rawPath: string
-  if (isLegacyId(script.id)) {
-    rawPath = `/raw/${script.id}`
-  } else {
-    rawPath = script.version === 1
-      ? `/raw/${script.slug}`
-      : `/raw/${script.slug}/${script.version}`
-  }
-
-  const rawUrl = `${baseUrl}${rawPath}`
-  const loadstring = `loadstring(game:HttpGet("${rawUrl}"))()` 
+  const rawUrl = `${baseUrl}/raw/${id}`
+  const loadstring = `loadstring(game:HttpGet("${rawUrl}"))()`
 
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-8 px-4 py-12 sm:py-16">
@@ -77,9 +45,7 @@ export default async function ScriptPage({
           <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Terminal className="size-4" />
           </div>
-          <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground">
-            {script.title}
-          </h1>
+          <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground">{script.title}</h1>
         </div>
         <p className="font-mono text-xs text-muted-foreground">
           {new Date(script.createdAt).toLocaleString("pt-BR")}
@@ -92,9 +58,7 @@ export default async function ScriptPage({
           URL raw
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
-          <code className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-sm text-foreground">
-            {rawUrl}
-          </code>
+          <code className="flex-1 overflow-x-auto whitespace-nowrap font-mono text-sm text-foreground">{rawUrl}</code>
           <CopyButton value={rawUrl} className="shrink-0" />
         </div>
       </section>
@@ -124,9 +88,7 @@ export default async function ScriptPage({
             <span className="ml-3 font-mono text-xs text-muted-foreground">script.lua</span>
           </div>
           <pre className="max-h-[28rem] overflow-auto p-4">
-            <code className="font-mono text-sm leading-relaxed text-foreground">
-              {script.content}
-            </code>
+            <code className="font-mono text-sm leading-relaxed text-foreground">{script.content}</code>
           </pre>
         </div>
       </section>
