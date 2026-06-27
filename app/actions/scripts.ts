@@ -9,6 +9,13 @@ export type CreateScriptResult =
   | { ok: true; path: string }
   | { ok: false; error: string }
 
+// Limite em bytes (não caracteres) — 4MB é seguro pro Vercel
+const MAX_SIZE_BYTES = 4 * 1024 * 1024 // 4MB
+
+function getByteLength(str: string): number {
+  return new Blob([str]).size
+}
+
 export async function createScript(formData: FormData): Promise<CreateScriptResult> {
   const content = String(formData.get("content") ?? "")
   const rawTitle = String(formData.get("title") ?? "").trim()
@@ -17,8 +24,14 @@ export async function createScript(formData: FormData): Promise<CreateScriptResu
     return { ok: false, error: "O script não pode estar vazio." }
   }
 
-  if (content.length > 50_000_000) {
-    return { ok: false, error: "O script é muito grande (máximo 50 MB)." }
+  const sizeBytes = getByteLength(content)
+
+  if (sizeBytes > MAX_SIZE_BYTES) {
+    const mb = (sizeBytes / (1024 * 1024)).toFixed(2)
+    return {
+      ok: false,
+      error: `Script muito grande (${mb}MB). Máximo permitido: 4MB. Tente usar um minifier/obfuscador para reduzir o tamanho.`,
+    }
   }
 
   const title = rawTitle.slice(0, 120) || "Untitled"
@@ -35,14 +48,22 @@ export async function createScript(formData: FormData): Promise<CreateScriptResu
   // ID interno: slug + versão (único no DB)
   const id = nextVersion === 1 ? slug : `${slug}/${nextVersion}`
 
-  await db.insert(scripts).values({
-    id,
-    slug,
-    version: nextVersion,
-    title,
-    content,
-    language: "lua",
-  })
+  try {
+    await db.insert(scripts).values({
+      id,
+      slug,
+      version: nextVersion,
+      title,
+      content,
+      language: "lua",
+    })
+  } catch (err) {
+    console.error("DB insert error:", err)
+    return {
+      ok: false,
+      error: "Erro ao salvar no banco de dados. O script pode estar muito grande ou o servidor está sobrecarregado.",
+    }
+  }
 
   // path público da página de detalhes
   const path = nextVersion === 1 ? `/${slug}` : `/${slug}/${nextVersion}`
