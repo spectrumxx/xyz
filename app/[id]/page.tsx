@@ -1,4 +1,5 @@
 import { getScriptById, getScriptBySlug } from "@/app/actions/scripts"
+import { isLegacyId } from "@/lib/slug"
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Eye, Link2, Terminal } from "lucide-react"
