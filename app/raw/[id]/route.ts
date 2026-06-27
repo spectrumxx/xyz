@@ -9,34 +9,21 @@ export const dynamic = "force-dynamic"
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ slug: string[] }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { slug } = await params
-  // slug pode ser ["sarradanoar"] ou ["sarradanoar", "2"]
+  const { id } = await params
 
   let script = null
   let scriptId: string | null = null
 
-  if (slug.length === 1) {
-    const segment = slug[0]
-
-    if (isLegacyId(segment)) {
-      // Compatibilidade com IDs antigos como "EU0098IQ"
-      script = await getScriptById(segment)
-      scriptId = segment
-    } else {
-      // Slug novo, versão 1
-      script = await getScriptBySlug(segment, 1)
-      scriptId = script?.id ?? null
-    }
-  } else if (slug.length === 2) {
-    const slugName = slug[0]
-    const version = parseInt(slug[1], 10)
-
-    if (!isNaN(version) && version >= 1) {
-      script = await getScriptBySlug(slugName, version)
-      scriptId = script?.id ?? null
-    }
+  if (isLegacyId(id)) {
+    // Compatibilidade com IDs antigos como "EU0098IQ"
+    script = await getScriptById(id)
+    scriptId = id
+  } else {
+    // Tenta como slug v1
+    script = await getScriptBySlug(id, 1)
+    scriptId = script?.id ?? null
   }
 
   if (!script || !scriptId) {
