@@ -1,5 +1,5 @@
 import { getScriptById, getScriptBySlug } from "@/app/actions/scripts"
-import { isLegacyId } from "@/lib/slug"   // <-- COLOCA ESSA LINHA
+import { isLegacyId } from "@/lib/slug"
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Eye, Link2, Terminal } from "lucide-react"
@@ -18,12 +18,32 @@ async function getBaseUrl() {
 
 export default async function ScriptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const script = await getScript(id)
+
+  let script = null
+
+  // ID legado (ex: EU0098IQ) ou slug simples
+  if (isLegacyId(id)) {
+    script = await getScriptById(id)
+  } else {
+    // Tenta como slug v1
+    script = await getScriptBySlug(id, 1)
+  }
 
   if (!script) notFound()
 
   const baseUrl = await getBaseUrl()
-  const rawUrl = `${baseUrl}/raw/${id}`
+
+  // Monta raw URL
+  let rawPath: string
+  if (isLegacyId(script.id)) {
+    rawPath = `/raw/${script.id}`
+  } else {
+    rawPath = script.version === 1
+      ? `/raw/${script.slug}`
+      : `/raw/${script.slug}/${script.version}`
+  }
+
+  const rawUrl = `${baseUrl}${rawPath}`
   const loadstring = `loadstring(game:HttpGet("${rawUrl}"))()`
 
   return (
