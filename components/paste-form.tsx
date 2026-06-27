@@ -2,9 +2,9 @@
 
 import { createScript } from "@/app/actions/scripts"
 import { Button } from "@/components/ui/button"
-import { FileCode2, Loader2, Upload } from "lucide-react"
+import { FileCode2, FileUp, Loader2, Upload } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 
 export function PasteForm() {
   const router = useRouter()
@@ -12,6 +12,38 @@ export function PasteForm() {
   const [error, setError] = useState<string | null>(null)
   const [content, setContent] = useState("")
   const [title, setTitle] = useState("")
+  const [isReading, setIsReading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsReading(true)
+    setError(null)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = String(event.target?.result ?? "")
+      setContent(text)
+
+      // Se título vazio, usa nome do arquivo sem extensão
+      if (!title.trim()) {
+        const fileName = file.name.replace(/\.[^/.]+$/, "")
+        setTitle(fileName.slice(0, 120))
+      }
+
+      setIsReading(false)
+    }
+    reader.onerror = () => {
+      setError("Erro ao ler o arquivo. Tente copiar e colar manualmente.")
+      setIsReading(false)
+    }
+    reader.readAsText(file)
+
+    // Limpa o input pra permitir selecionar o mesmo arquivo de novo
+    e.target.value = ""
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -38,6 +70,7 @@ export function PasteForm() {
 
   const lineCount = content ? content.split("\n").length : 0
   const charCount = content.length
+  const sizeMB = content ? (new Blob([content]).size / (1024 * 1024)).toFixed(2) : "0"
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -57,21 +90,43 @@ export function PasteForm() {
           <span>{lineCount} linhas</span>
           <span aria-hidden>•</span>
           <span>{charCount} chars</span>
+          <span aria-hidden>•</span>
+          <span>{sizeMB} MB</span>
         </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="flex items-center gap-1.5 border-b border-border bg-secondary/40 px-4 py-2.5">
-          <span className="size-3 rounded-full bg-destructive/70" aria-hidden />
-          <span className="size-3 rounded-full bg-chart-2/70" aria-hidden />
-          <span className="size-3 rounded-full bg-primary/70" aria-hidden />
-          <span className="ml-3 font-mono text-xs text-muted-foreground">script.lua</span>
+        <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-4 py-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="size-3 rounded-full bg-destructive/70" aria-hidden />
+            <span className="size-3 rounded-full bg-chart-2/70" aria-hidden />
+            <span className="size-3 rounded-full bg-primary/70" aria-hidden />
+            <span className="ml-3 font-mono text-xs text-muted-foreground">script.lua</span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isReading}
+          >
+            <FileUp className="size-3.5" />
+            {isReading ? "Lendo..." : "Selecionar arquivo"}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".lua,.txt"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
         </div>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           spellCheck={false}
-          placeholder={'-- Cole seu script Lua aqui\nprint("Hello from your executor!")'}
+          placeholder={'-- Cole seu script Lua aqui ou clique em "Selecionar arquivo"\nprint("Hello from your executor!")'}
           className="h-80 w-full resize-y bg-transparent p-4 font-mono text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/60"
         />
       </div>
@@ -87,7 +142,7 @@ export function PasteForm() {
           O código é salvo e fica acessível via URL raw para usar com{" "}
           <code className="font-mono text-primary">loadstring</code>.
         </p>
-        <Button type="submit" disabled={isPending} size="lg" className="shrink-0">
+        <Button type="submit" disabled={isPending || isReading} size="lg" className="shrink-0">
           {isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
